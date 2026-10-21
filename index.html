@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Night Stalkers — Fleet Ops</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body class="bg-[#090b0d] text-slate-100 font-sans min-h-screen antialiased overflow-x-hidden">
+
+<!-- ===== ANIMATED NIGHT-OPS BACKGROUND ===== -->
+<canvas id="fx" class="fixed inset-0 w-full h-full pointer-events-none opacity-60"></canvas>
+
+<!-- ===== VIGNETTE / TOP GLOW ===== -->
+<div class="fixed top-0 inset-x-0 h-40 bg-gradient-to-b from-emerald-500/10 to-transparent pointer-events-none z-0"></div>
+<div class="fixed inset-0 pointer-events-none z-0" style="background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%)"></div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 hidden px-5 py-3 rounded-full text-sm font-medium shadow-2xl border backdrop-blur-xl"></div>
+
+<!-- ===== COPY-LINK PILL (recovery) ===== -->
+<div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full bg-slate-900/80 backdrop-blur-xl border border-white/10 pl-4 pr-2 py-1.5 shadow-xl">
+  <img class="w-3.5 h-3.5 opacity-60" src="https://unpkg.com/lucide-static@1.44.0/icons/link.svg" alt="">
+  <span class="text-[11px] text-slate-400 max-w-[40vw] truncate" id="appUrlText"></span>
+  <button id="copyLinkBtn" class="rounded-full bg-emerald-500/20 hover:bg-emerald-500/40 border border-emerald-400/30 px-3 py-1 text-[11px] font-semibold text-emerald-200 transition">Copy</button>
+</div>
+
+<!-- ===== NIGHT OPS SEAL (decorative) ===== -->
+<div class="fixed top-3 right-4 z-30 hidden md:flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-slate-500 select-none pointer-events-none">
+  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+  Night Ops · Fleet Division
+</div>
+
+<!-- ===== BOOT ===== -->
+<div id="viewBoot" class="relative z-10 min-h-screen flex items-center justify-center p-6">
+  <div class="max-w-md w-full text-center">
+    <div class="relative mx-auto w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-500/25 to-amber-500/10 border border-emerald-400/40 flex items-center justify-center mb-5 shadow-[0_0_50px_rgba(52,211,153,0.25)]">
+      <img class="w-9 h-9 [filter:drop-shadow(0_0_12px_rgba(52,211,153,0.8))]" src="https://unpkg.com/lucide-static@1.44.0/icons/moon-star.svg" alt="night ops">
+    </div>
+    <p class="text-[10px] uppercase tracking-[0.35em] text-emerald-400/80">Night Stalkers</p>
+    <h1 class="text-4xl font-black tracking-tight bg-gradient-to-r from-emerald-300 via-lime-200 to-amber-200 bg-clip-text text-transparent mt-1">NIGHT STALKERS</h1>
+    <p class="text-slate-400 mt-2 text-sm">Robotaxi maintenance · shift ops · live spreadsheet log</p>
+
+    <div class="mt-8 rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-6 shadow-[0_8px_40px_-12px_rgba(52,211,153,0.2)]">
+      <p id="bootWelcome" class="text-xs text-slate-400 mb-4"></p>
+      <div class="grid grid-cols-2 gap-3">
+        <button id="btnCrew" class="rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-400 hover:brightness-110 text-slate-950 font-extrabold py-5 transition shadow-[0_0_30px_rgba(52,211,153,0.3)]">
+          <img class="w-5 h-5 mx-auto mb-1.5" src="https://unpkg.com/lucide-static@1.44.0/icons/smartphone.svg" alt="phone">
+          Crew
+        </button>
+        <button id="btnCmd" class="rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-white/10 font-bold py-5 transition">
+          <img class="w-5 h-5 mx-auto mb-1.5" src="https://unpkg.com/lucide-static@1.44.0/icons/users.svg" alt="command">
+          Command
+        </button>
+      </div>
+      <div class="flex items-center justify-center gap-2 mt-5">
+        <button id="btnSettingsBoot" class="text-sm text-slate-400 hover:text-emerald-200 inline-flex items-center gap-1.5 transition">
+          <img class="w-4 h-4" src="https://unpkg.com/lucide-static@1.44.0/icons/settings.svg" alt=""> Settings
+        </button>
+        <span class="text-slate-600">·</span>
+        <button id="btnQrBoot" class="text-sm text-slate-400 hover:text-emerald-200 inline-flex items-center gap-1.5 transition">
+          <img class="w-4 h-4" src="https://unpkg.com/lucide-static@1.44.0/icons/qr-code.svg" alt=""> My QR
+        </button>
+      </div>
+    </div>
+    <p class="text-[11px] text-slate-600 mt-6">Scanning a crew badge signs you in automatically.</p>
+  </div>
+</div>
+
+<!-- ===== CREW VIEW ===== -->
+<div id="viewCrew" class="hidden relative z-10 max-w-xl mx-auto px-4 pb-32 pt-4">
+  <div class="flex items-center justify-between mb-5">
+    <div class="flex items-center gap-2.5">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_12px_rgba(52,211,153,0.9)]"></span>
+      <span class="font-extrabold text-lg tracking-tight">Crew Mode</span>
+      <span id="crewNameChip" class="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-[11px] font-bold text-emerald-200"></span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="crewSyncBtn" class="p-2.5 rounded-xl bg-slate-800/70 border border-white/10 hover:bg-slate-700/70 transition" title="Sync">
+        <img class="w-4 h-4" src="https://unpkg.com/lucide-static@1.44.0/icons/refresh-cw.svg" alt="sync">
+      </button>
+      <button id="crewSettingsBtn" class="p-2.5 rounded-xl bg-slate-800/70 border border-white/10 hover:bg-slate-700/70 transition" title="Settings">
+        <img class="w-4 h-4" src="https://unpkg.com/lucide-static@1.44.0/icons/settings.svg" alt="settings">
+      </button>
+    </div>
+  </div>
+
+  <!-- assignment banner -->
+  <div id="assignBanner" class="hidden mb-4 rounded-3xl bg-gradient-to-r from-emerald-500/20 via-lime-500/10 to-transparent border border-emerald-400/40 p-4 shadow-[0_0_30px_rgba(52,211,153,0.15)]">
+    <div class="flex items-start gap-3">
+      <img class="w-5 h-5 mt-0.5 [filter:drop-shadow(0_0_8px_rgba(52,211,153,0.7))]" src="https://unpkg.com/lucide-static@1.44.0/icons/send.svg" alt="assigned">
+      <div>
+        <p class="text-xs uppercase tracking-wider text-emerald-300 font-semibold">Tasked by command</p>
+        <p class="text-xl font-black mt-0.5 tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-lime-200" id="assignVin"></p>
+        <p class="text-xs text-slate-300 mt-1" id="assignAt"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- countdown card -->
+  <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-6 mb-4 shadow-[0_8px_40px_-12px_rgba(52,211,153,0.22)]">
+    <div class="flex items-center justify-between">
+      <p class="text-xs uppercase tracking-widest text-slate-400 font-semibold">VINs left · reserved</p>
+      <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-[10px] uppercase tracking-wide text-emerald-200" id="reservedChip">0 reserved</span>
+    </div>
+    <p id="statLeft" class="text-7xl font-black mt-2 tabular-nums text-transparent bg-clip-text bg-gradient-to-b from-emerald-200 to-emerald-500 [filter:drop-shadow(0_0_20px_rgba(52,211,153,0.4))]">0</p>
+    <div class="mt-2 h-2 rounded-full bg-slate-800 border border-white/5 overflow-hidden">
+      <div id="progressBar" class="h-full rounded-full bg-gradient-to-r from-emerald-400 to-lime-400 shadow-[0_0_16px_rgba(52,211,153,0.6)] transition-all duration-700" style="width:0%"></div>
+    </div>
+    <div class="grid grid-cols-4 gap-2 mt-5 text-center">
+      <div class="rounded-2xl bg-emerald-500/10 border border-emerald-400/25 py-3"><p id="stPU" class="text-xl font-extrabold text-emerald-300 tabular-nums">0</p><p class="text-[10px] uppercase text-slate-400 mt-0.5">Picked</p></div>
+      <div class="rounded-2xl bg-teal-500/10 border border-teal-400/25 py-3"><p id="stDO" class="text-xl font-extrabold text-teal-300 tabular-nums">0</p><p class="text-[10px] uppercase text-slate-400 mt-0.5">Drop</p></div>
+      <div class="rounded-2xl bg-amber-500/10 border border-amber-400/25 py-3"><p id="stDN" class="text-xl font-extrabold text-amber-300 tabular-nums">0</p><p class="text-[10px] uppercase text-slate-400 mt-0.5">Downed</p></div>
+      <div class="rounded-2xl bg-lime-500/10 border border-lime-400/25 py-3"><p id="stCO" class="text-xl font-extrabold text-lime-300 tabular-nums">0</p><p class="text-[10px] uppercase text-slate-400 mt-0.5">Done</p></div>
+    </div>
+  </div>
+
+  <!-- sync pill -->
+  <div class="flex items-center justify-center gap-2 text-xs text-slate-400 mb-4">
+    <span class="w-1.5 h-1.5 rounded-full bg-slate-600" id="syncDot"></span><span id="syncText">Not connected to spreadsheet</span>
+  </div>
+
+  <!-- lookup -->
+  <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-5 mb-4 shadow-[0_8px_40px_-12px_rgba(52,211,153,0.15)]">
+    <label class="text-xs uppercase tracking-widest text-slate-400 font-semibold">Last 4–6 digits of VIN</label>
+    <div class="flex gap-2 mt-2">
+      <input id="crewInput" placeholder="e.g. LC0012" maxlength="6" autocomplete="off"
+             class="flex-1 bg-slate-800/70 border border-white/10 rounded-2xl px-4 py-3.5 text-lg font-bold tracking-widest uppercase placeholder:font-normal placeholder:text-slate-500 placeholder:tracking-normal outline-none focus:border-emerald-400/60 focus:shadow-[0_0_0_3px_rgba(52,211,153,0.15)] transition">
+      <button id="crewGo" class="px-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-400 hover:brightness-110 text-slate-950 font-bold transition shadow-[0_0_24px_rgba(52,211,153,0.35)]">
+        <img class="w-5 h-5" src="https://unpkg.com/lucide-static@1.44.0/icons/search.svg" alt="search">
+      </button>
+    </div>
+    <p id="matchMsg" class="mt-2 text-xs text-slate-400"></p>
+  </div>
+
+  <div id="matchList" class="space-y-3"></div>
+  <p class="text-center text-xs text-slate-500 mt-6">Status changes auto-post to the Google Sheet with your name &amp; timestamp.</p>
+</div>
+
+<!-- ===== COMMAND VIEW ===== -->
+<div id="viewCmd" class="hidden relative z-10 max-w-6xl mx-auto px-4 pb-36 pt-4">
+  <div class="flex items-center justify-between mb-5">
+    <div class="flex items-center gap-2.5">
+      <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.9)]"></span>
+      <span class="font-extrabold text-lg tracking-tight">Command Mode</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="cmdSyncBtn" class="px-3.5 py-2.5 rounded-xl bg-slate-800/70 border border-white/10 hover:bg-slate-700/70 text-sm font-semibold inline-flex items-center gap-1.5 transition">
+        <img class="w-4 h-4" src="https://unpkg.com/lucide-static@1.44.0/icons/refresh-cw.svg" alt="sync"> Sync
+      </button>
+      <button id="cmdSettingsBtn" class="p-2.5 rounded-xl bg-slate-800/70 border border-white/10 hover:bg-slate-700/70 transition">
+        <img class="w-4 h-4" src="https://unpkg.com/lucide-static@1.44.0/icons/settings.svg" alt="settings">
+      </button>
+    </div>
+  </div>
+
+  <!-- stats -->
+  <div class="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
+    <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-4 col-span-2 shadow-[0_0_30px_rgba(52,211,153,0.12)]">
+      <p class="text-xs uppercase text-slate-400">Left · reserved</p>
+      <p id="cmdLeft" class="text-4xl font-black mt-1 tabular-nums text-emerald-300 [filter:drop-shadow(0_0_14px_rgba(52,211,153,0.5))]">0</p>
+    </div>
+    <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-4"><p class="text-xs uppercase text-slate-400">Reserved</p><p id="cmdReserved" class="text-2xl font-extrabold mt-1 tabular-nums">0</p></div>
+    <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-4"><p class="text-xs uppercase text-slate-400">Total VINs</p><p id="cmdTotal" class="text-2xl font-extrabold mt-1 tabular-nums">0</p></div>
+    <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-4"><p class="text-xs uppercase text-slate-400">Unreserved</p><p id="cmdNoRes" class="text-2xl font-extrabold mt-1 text-slate-400 tabular-nums">0</p></div>
+    <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-4"><p class="text-xs uppercase text-slate-400">Crew on shift</p><p id="cmdCrewCount" class="text-2xl font-extrabold mt-1 tabular-nums text-emerald-300">0</p></div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- LEFT -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- shift roster -->
+      <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-5">
+        <h3 class="font-bold inline-flex items-center gap-2 uppercase tracking-wider text-sm"><img class="w-4 h-4 text-emerald-300" src="https://unpkg.com/lucide-static@1.44.0/icons/upload.svg" alt=""> Shift Roster (CSV)</h3>
+        <p class="text-xs text-slate-400 mt-1">Upload at start of shift. Replaces the current roster.</p>
+        <label class="mt-3 flex items-center justify-center gap-2 border-2 border-dashed border-white/15 hover:border-emerald-400/60 rounded-2xl py-6 cursor-pointer transition text-sm font-medium bg-slate-800/30">
+          <img class="w-4 h-4" src="https://unpkg.com/lucide-static@1.44.0/icons/file-text.svg" alt=""> Choose CSV file
+          <input type="file" id="shiftFile" accept=".csv,text/csv" class="hidden">
+        </label>
+        <p id="shiftMsg" class="mt-2 text-xs text-slate-400"></p>
+      </div>
+
+      <!-- retroactive additions -->
+      <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-5">
+        <h3 class="font-bold inline-flex items-center gap-2 uppercase tracking-wider text-sm"><img class="w-4 h-4 text-emerald-300" src="https://unpkg.com/lucide-static@1.44.0/icons/list-checks.svg" alt=""> Retroactive Additions</h3>
+        <p class="text-xs text-slate-400 mt-1">Same CSV format — modifications, backups, or low-charge units.</p>
+        <label class="mt-3 flex items-center justify-center gap-2 border-2 border-dashed border-white/15 hover:border-emerald-400/60 rounded-2xl py-6 cursor-pointer transition text-sm font-medium bg-slate-800/30">
+          <img class="w-4 h-4" src="https://unpkg.com/lucide-static@1.44.0/icons/file-text.svg" alt=""> Choose CSV file
+          <input type="file" id="addFile" accept=".csv,text/csv" class="hidden">
+        </label>
+        <div id="addPreview" class="mt-4"></div>
+      </div>
+
+      <!-- crew QR badges -->
+      <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-emerald-400/25 p-5 shadow-[0_0_30px_rgba(52,211,153,0.1)]">
+        <h3 class="font-bold inline-flex items-center gap-2 uppercase tracking-wider text-sm"><img class="w-4 h-4 text-emerald-300" src="https://unpkg.com/lucide-static@1.44.0/icons/qr-code.svg" alt=""> Crew QR Badges</h3>
+        <p class="text-xs text-slate-400 mt-1">Each badge signs a crew member into the app instantly.</p>
+        <div class="flex gap-2 mt-3">
+          <input id="newCrewName" placeholder="crew member name" class="flex-1 bg-slate-800/70 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-emerald-400/60 transition">
+          <button id="addCrewBtn" class="px-4 rounded-xl bg-gradient-to-br from-emerald-500 to-lime-400 hover:brightness-110 text-slate-950 font-bold text-sm transition shadow-[0_0_20px_rgba(52,211,153,0.3)]">Add</button>
+        </div>
+        <div id="crewBadges" class="mt-4 space-y-2"></div>
+      </div>
+
+      <!-- live log -->
+      <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-5">
+        <h3 class="font-bold inline-flex items-center gap-2 uppercase tracking-wider text-sm"><img class="w-4 h-4 text-emerald-300" src="https://unpkg.com/lucide-static@1.44.0/icons/clipboard-list.svg" alt=""> Live Log</h3>
+        <div id="logTable" class="mt-3 divide-y divide-white/5 text-sm"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="space-y-6">
+      <!-- send task -->
+      <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-emerald-400/30 p-5 shadow-[0_0_30px_rgba(52,211,153,0.12)]">
+        <h3 class="font-bold inline-flex items-center gap-2 uppercase tracking-wider text-sm"><img class="w-4 h-4 text-emerald-300" src="https://unpkg.com/lucide-static@1.44.0/icons/send.svg" alt=""> Send VIN to Crew</h3>
+        <div class="mt-4 space-y-3">
+          <div>
+            <label class="text-xs uppercase tracking-wider text-slate-400">Crew member</label>
+            <input id="assignCrew" list="crewList" placeholder="enter name" class="mt-1 w-full bg-slate-800/70 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-emerald-400/60 transition">
+            <datalist id="crewList"></datalist>
+          </div>
+          <div>
+            <label class="text-xs uppercase tracking-wider text-slate-400">VIN (full or last 4–6)</label>
+            <input id="assignVin" placeholder="e.g. LC0012" maxlength="17" class="mt-1 w-full bg-slate-800/70 border border-white/10 rounded-xl px-3.5 py-2.5 uppercase tracking-wider text-sm outline-none focus:border-emerald-400/60 transition">
+          </div>
+          <button id="sendAssign" class="w-full rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-400 hover:brightness-110 text-slate-950 font-extrabold py-3.5 transition shadow-[0_0_24px_rgba(52,211,153,0.35)]">Send assignment</button>
+          <p id="assignMsg" class="text-xs text-slate-400"></p>
+        </div>
+      </div>
+
+      <!-- active assignments -->
+      <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-5">
+        <h3 class="font-bold inline-flex items-center gap-2 uppercase tracking-wider text-sm"><img class="w-4 h-4 text-emerald-300" src="https://unpkg.com/lucide-static@1.44.0/icons/users.svg" alt=""> Active Assignments</h3>
+        <div id="assignHistory" class="mt-3 space-y-2 text-sm"></div>
+      </div>
+
+      <!-- controls -->
+      <div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-5">
+        <h3 class="font-bold inline-flex items-center gap-2 uppercase tracking-wider text-sm"><img class="w-4 h-4 text-emerald-300" src="https://unpkg.com/lucide-static@1.44.0/icons/trash-2.svg" alt=""> Shift Controls</h3>
+        <button id="resetShift" class="mt-3 w-full rounded-2xl bg-slate-800/70 border border-white/10 hover:bg-slate-700/70 text-sm font-semibold py-3 transition">Reset / clear roster</button>
+        <p id="resetMsg" class="mt-2 text-xs text-slate-400"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SETTINGS MODAL ===== -->
+<div id="modalSettings" class="hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="w-full max-w-lg rounded-3xl bg-slate-900/90 backdrop-blur-xl border border-white/10 p-6 shadow-2xl">
+    <div class="flex items-center justify-between">
+      <h3 class="font-extrabold text-lg">Settings</h3>
+      <button id="closeSettings" class="p-1.5 rounded-lg hover:bg-slate-800"><img class="w-4 h-4" src="https://unpkg.com/lucide-static@1.44.0/icons/x.svg" alt="close"></button>
+    </div>
+    <div class="mt-5 space-y-4">
+      <div>
+        <label class="text-xs uppercase tracking-wider text-slate-400">Your name (logged on every action)</label>
+        <input id="setName" placeholder="e.g. Marcus" class="mt-1 w-full bg-slate-800/70 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-emerald-400/60 transition">
+      </div>
+      <div>
+        <label class="text-xs uppercase tracking-wider text-slate-400">Google Apps Script /exec URL</label>
+        <input id="setUrl" placeholder="https://script.google.com/macros/s/…/exec" class="mt-1 w-full bg-slate-800/70 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-emerald-400/60 transition">
+      </div>
+      <button id="testConn" class="w-full rounded-xl bg-slate-800/70 border border-white/10 hover:bg-slate-700/70 text-sm font-semibold py-2.5 transition">Test connection</button>
+      <p id="connMsg" class="text-xs text-slate-400"></p>
+
+      <div class="rounded-2xl bg-slate-800/40 border border-white/10 p-4">
+        <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold">App link (share / recovery)</p>
+        <div class="flex items-center gap-2 mt-2">
+          <code id="settingsUrl" class="flex-1 text-[11px] text-emerald-200 truncate bg-slate-900/80 border border-white/10 rounded-lg px-3 py-2"></code>
+          <button id="copySettingsLink" class="px-3 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/40 border border-emerald-400/30 text-xs font-semibold text-emerald-200 transition">Copy</button>
+        </div>
+        <button id="showAppQr" class="mt-3 w-full rounded-xl bg-slate-800/80 border border-white/10 hover:bg-slate-700/80 text-sm font-semibold py-2.5 transition">Show app QR</button>
+      </div>
+
+      <button id="saveSettings" class="w-full rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-400 hover:brightness-110 text-slate-950 font-extrabold py-3.5 transition shadow-[0_0_24px_rgba(52,211,153,0.35)]">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== QR MODAL ===== -->
+<div id="modalQr" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="w-full max-w-sm rounded-3xl bg-slate-900/95 backdrop-blur-xl border border-emerald-400/30 p-6 text-center shadow-[0_0_60px_rgba(52,211,153,0.2)]">
+    <p id="qrTitle" class="font-extrabold text-lg"></p>
+    <p id="qrSub" class="text-xs text-slate-400 mt-1 mb-4"></p>
+    <div id="qrCanvasWrap" class="mx-auto bg-white rounded-2xl p-3 inline-block shadow-[0_0_30px_rgba(52,211,153,0.3)]"></div>
+    <p id="qrFallback" class="hidden mt-3 text-[11px] text-slate-400 break-all"></p>
+    <div class="grid grid-cols-2 gap-3 mt-5">
+      <button id="qrDownload" class="rounded-xl bg-slate-800/80 border border-white/10 hover:bg-slate-700/80 text-sm font-semibold py-2.5 transition inline-flex items-center justify-center gap-1.5">
+        <img class="w-4 h-4" src="https://unpkg.com/lucide-static@1.44.0/icons/download.svg" alt=""> PNG
+      </button>
+      <button id="qrCopy" class="rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 border border-emerald-400/30 text-sm font-semibold text-emerald-200 py-2.5 transition inline-flex items-center justify-center gap-1.5">
+        <img class="w-4 h-4" src="https://unpkg.com/lucide-static@1.44.0/icons/copy.svg" alt=""> Copy link
+      </button>
+    </div>
+    <button id="closeQr" class="mt-3 text-sm text-slate-400 hover:text-emerald-200 transition">Close</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   NIGHT STALKERS — Robotaxi Fleet Ops
+   Crew mode · Command mode · QR crew badges · Google Sheets sync
+   Night-ops theme: phosphor green, amber warnings, dark UI.
+   Sync channel: Apps Script web app (POST text/plain to avoid
+   CORS preflight — required by Apps Script web apps).
+   ============================================================ */
+
+const LS_KEY = 'night_stalkers_v1';
+let S = { crew:'', url:'', roster:[], statuses:{}, logs:[], assigns:[], queue:[], crewMembers:[], shiftStarted:null };
+try { const raw = localStorage.getItem(LS_KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch(e) {}
+function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(e){} }
+
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function normVin(v){ return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function nowISO(){ return new Date().toISOString(); }
+function fmtTime(iso){ try { return new Date(iso).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}); } catch(e){ return iso; } }
+function baseUrl(){ try { return location.origin + location.pathname; } catch(e){ return 'https://your-app-url'; } }
+function toast(msg, ok){
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-full text-sm font-medium shadow-2xl border backdrop-blur-xl ' +
+    (ok ? 'bg-emerald-500/90 text-slate-950 border-emerald-300' : 'bg-slate-800/90 text-slate-100 border-white/10');
+  t.classList.remove('hidden');
+  clearTimeout(toast._t); toast._t = setTimeout(()=> t.classList.add('hidden'), 2600);
+}
+async function copyText(txt){
+  try { await navigator.clipboard.writeText(txt); return true; }
+  catch(e){ try { const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); return true; } catch(e2){ return false; } }
+}
+
+/* ---------- Status metadata (night-ops palette) ---------- */
+const META = {
+  PU:{label:'Picked Up', badge:'bg-emerald-500/15 text-emerald-300 border-emerald-400/40'},
+  DO:{label:'Dropped Off', badge:'bg-teal-500/15 text-teal-300 border-teal-400/40'},
+  DN:{label:'Downed', badge:'bg-amber-500/15 text-amber-300 border-amber-400/40'},
+  CO:{label:'Complete', badge:'bg-lime-500/15 text-lime-300 border-lime-400/40'}
+};
+const TAG_META = {
+  modification:{label:'Modification', badge:'bg-sky-500/10 text-sky-300 border-sky-400/30'},
+  backup:{label:'Backup', badge:'bg-violet-500/10 text-violet-300 border-violet-400/30'},
+  'low-charge':{label:'Low Charge', badge:'bg-amber-500/10 text-amber-300 border-amber-400/30'}
+};
+
+/* ---------- CSV parser ---------- */
+function parseCSV(text){
+  const rows=[]; let row=[], cur='', q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else {
+      if(c==='"') q=true;
+      else if(c===','){ row.push(cur); cur=''; }
+      else if(c==='\n'||c==='\r'){
+        if(c==='\r'&&text[i+1]==='\n') i++;
+        row.push(cur); if(row.some(s=>s.trim().length)) rows.push(row); row=[]; cur='';
+      } else cur+=c;
+    }
+  }
+  if(cur!==''||row.length){ row.push(cur); if(row.some(s=>s.trim().length)) rows.push(row); }
+  return rows;
+}
+function parseRoster(text){
+  const rows=parseCSV(text);
+  if(!rows.length) return {items:[], skipped:0};
+  const first=rows[0].map(s=>String(s).toLowerCase());
+  const hasHeader = first.some(s=>s.includes('vin')||s.includes('reserv')||s.includes('date')||s.includes('slot')||s.includes('time'));
+  const start = hasHeader ? 1 : 0;
+  let iVin=0, iRes=1;
+  if(hasHeader){ iVin=first.findIndex(s=>s.includes('vin')); if(iVin<0)iVin=0; iRes=first.findIndex(s=>s.includes('reserv')||s.includes('time')||s.includes('date')||s.includes('slot')); }
+  const items=[]; let skipped=0;
+  for(let r=start;r<rows.length;r++){
+    const v=normVin(rows[r][iVin]||'');
+    if(!v){ skipped++; continue; }
+    const res=(rows[r][iRes]||'').trim();
+    items.push({v, res});
+  }
+  return {items, skipped};
+}
+
+/* ---------- Roster helpers ---------- */
+function reservedCount(){ return S.roster.filter(r=>r.res && r.res.trim()).length; }
+function leftCount(){ return S.roster.filter(r=>r.res && r.res.trim() && !S.statuses[r.v]).length; }
+function statusCount(code){ return Object.values(S.statuses).filter(s=>s.st===code).length; }
+function findMatch(partial){ const p=normVin(partial); if(!p) return []; return S.roster.filter(r=>r.v.endsWith(p)); }
+function tagFor(vin){ const r=S.roster.find(x=>x.v===vin); return r ? (r.tag||'') : ''; }
+
+/* ---------- Actions ---------- */
+function setStatus(vin, st){
+  S.statuses[vin] = {st, at:nowISO(), by:S.crew || 'unknown'};
+  const rec = {type:'log', vin, status:st, by:S.crew||'unknown', tag:tagFor(vin), at:nowISO()};
+  S.logs.unshift(rec); S.queue.push(rec);
+  save(); renderAll(); pushQueue(); toast(META[st].label + ' — ' + vin, true);
+}
+
+/* ---------- Sync (Google Apps Script) ---------- */
+async function pushQueue(){
+  if(!S.url || !S.queue.length) return;
+  while(S.queue.length){
+    const item=S.queue[0];
+    try {
+      const res = await fetch(S.url, { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(item) });
+      const txt = await res.text();
+      let ok=false; try { ok = JSON.parse(txt).ok === true; } catch(e){}
+      if(ok){ S.queue.shift(); save(); } else { throw new Error('bad'); }
+    } catch(err){ renderSyncPill(false, S.queue.length); return; }
+  }
+  renderSyncPill(true, 0);
+}
+async function fetchLogs(){
+  if(!S.url) return;
+  try {
+    const res = await fetch(S.url + '?action=logs');
+    const logs = await res.json();
+    if(!Array.isArray(logs)) return;
+    logs.forEach(log=>{
+      if(!log || !log.vin) return;
+      const v=normVin(log.vin); if(!v) return;
+      const existing=S.statuses[v];
+      if(!existing || new Date(log.at) > new Date(existing.at)) S.statuses[v]={st:log.st, at:log.at, by:log.by, tag:log.tag};
+    });
+    save();
+  } catch(e){}
+}
+async function fetchAssigns(){
+  if(!S.url) return;
+  try {
+    const res = await fetch(S.url + '?action=assignments');
+    const arr = await res.json();
+    if(Array.isArray(arr) && arr.length){ S.assigns=arr; save(); }
+  } catch(e){}
+}
+async function syncAll(){ await pushQueue(); await Promise.all([fetchLogs(), fetchAssigns()]); renderAll(); renderSyncPill(true, S.queue.length); }
+
+/* ---------- QR helpers ---------- */
+function qrData(name){ return baseUrl() + '?crew=' + encodeURIComponent(name); }
+function renderQr(data, title, sub){
+  $('qrTitle').textContent = title;
+  $('qrSub').textContent = sub;
+  const wrap = $('qrCanvasWrap'); const fb = $('qrFallback');
+  wrap.innerHTML = ''; fb.classList.add('hidden'); fb.textContent='';
+  captureQrData = data;
+  if(window.QRCode){
+    try {
+      new QRCode(wrap, { text:data, width:220, height:220, colorDark:'#0a0b0d', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
+      return;
+    } catch(e){}
+  }
+  fb.textContent = data; fb.classList.remove('hidden');
+}
+let captureQrData='';
+function downloadQr(){
+  const wrap=$('qrCanvasWrap'); const cv=wrap.querySelector('canvas');
+  if(!cv){ toast('QR library unavailable — copy the link instead'); return; }
+  cv.toBlob(b=>{
+    const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+    a.download=(S.crew||'crew')+'-badge.png'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  }, 'image/png');
+}
+$('qrDownload').addEventListener('click', downloadQr);
+$('qrCopy').addEventListener('click', async ()=>{ if(await copyText(captureQrData)) toast('Link copied', true); });
+$('closeQr').addEventListener('click', ()=>$('modalQr').classList.add('hidden'));
+
+/* ---------- Crew badges (command) ---------- */
+function addCrewMember(name){
+  name = (name||'').trim(); if(!name) return;
+  if(!S.crewMembers.some(n=>n.toLowerCase()===name.toLowerCase())) S.crewMembers.push(name);
+  save(); renderCrewBadges();
+}
+function renderCrewBadges(){
+  const el=$('crewBadges');
+  if(!S.crewMembers.length){ el.innerHTML='<p class="text-xs text-slate-500">No crew badges yet — add a name to create one.</p>'; return; }
+  el.innerHTML = S.crewMembers.map(n=>`
+    <div class="flex items-center gap-3 rounded-2xl bg-slate-800/50 border border-white/10 px-3.5 py-2.5">
+      <img class="w-4 h-4 text-emerald-300" src="https://unpkg.com/lucide-static@1.44.0/icons/user.svg" alt="">
+      <span class="flex-1 font-semibold text-sm">${esc(n)}</span>
+      <button data-crew="${esc(n)}" class="showQrBtn px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-400/30 text-xs font-semibold text-emerald-200 transition">QR</button>
+      <button data-crew="${esc(n)}" class="copyCrewBtn px-3 py-1.5 rounded-lg bg-slate-700/60 hover:bg-slate-600/60 border border-white/10 text-xs font-semibold text-slate-300 transition">Link</button>
+    </div>`).join('');
+}
+document.addEventListener('click', e=>{
+  const q=e.target.closest('.showQrBtn');
+  if(q){ renderQr(qrData(q.dataset.crew), q.dataset.crew + ' — crew badge', 'Scan to sign in as '+ q.dataset.crew); $('modalQr').classList.remove('hidden'); return; }
+  const c=e.target.closest('.copyCrewBtn');
+  if(c){ copyText(qrData(c.dataset.crew)).then(ok=>toast(ok?'Link copied':'Copy failed', ok)); }
+});
+$('addCrewBtn').addEventListener('click', ()=>{ addCrewMember($('newCrewName').value); $('newCrewName').value=''; });
+$('newCrewName').addEventListener('keydown', e=>{ if(e.key==='Enter'){ addCrewMember(e.target.value); e.target.value=''; } });
+
+/* ---------- App link pills ---------- */
+function appLink(){ return baseUrl(); }
+function setAppUrlText(){
+  const u=appLink();
+  $('appUrlText').textContent = u;
+  $('settingsUrl').textContent = u;
+}
+$('copyLinkBtn').addEventListener('click', async ()=>{ if(await copyText(appLink())) toast('App link copied', true); });
+$('copySettingsLink').addEventListener('click', async ()=>{ if(await copyText(appLink())) toast('App link copied', true); });
+$('showAppQr').addEventListener('click', ()=>{ renderQr(appLink(), 'App QR', 'Scan to open this app'); $('modalQr').classList.remove('hidden'); });
+
+/* ---------- Render ---------- */
+function renderAll(){ renderStats(); renderLogs(); renderAssignBanner(); renderAssignHistory(); renderSyncPill(true, S.queue.length); renderCrewBadges(); renderCrewChip(); }
+function renderCrewChip(){ $('crewNameChip').textContent = S.crew || ''; }
+function renderStats(){
+  const res=reservedCount(), left=leftCount(), tot=S.roster.length;
+  $('progressBar').style.width = (tot? left/tot*100 : 0) + '%';
+  $('statLeft').textContent = left;
+  $('reservedChip').textContent = res + ' reserved';
+  ['PU','DO','DN','CO'].forEach(c=>{ $('st'+c).textContent = statusCount(c); });
+  $('cmdLeft').textContent = left; $('cmdReserved').textContent = res;
+  $('cmdTotal').textContent = tot; $('cmdNoRes').textContent = tot - res;
+  const crew = new Set();
+  S.logs.forEach(l=>{ if(l.by) crew.add(l.by); });
+  S.assigns.forEach(a=>{ if(a.crew) crew.add(a.crew); });
+  S.crewMembers.forEach(n=>crew.add(n));
+  $('cmdCrewCount').textContent = crew.size;
+  const dl=$('crewList'); dl.innerHTML=''; crew.forEach(n=>{ const o=document.createElement('option'); o.value=n; dl.appendChild(o); });
+}
+function renderLogs(){
+  const el=$('logTable');
+  if(!S.logs.length){ el.innerHTML='<p class="text-slate-500 text-sm py-3">No activity yet — actions will appear here.</p>'; return; }
+  el.innerHTML = S.logs.slice(0,60).map(l=>{
+    const m=META[l.status]||{label:l.status, badge:'bg-slate-700 text-slate-300 border-white/10'};
+    return `<div class="py-2.5 flex items-center gap-3">
+      <span class="px-2 py-0.5 rounded-full border text-[11px] font-semibold whitespace-nowrap ${m.badge}">${esc(m.label)}</span>
+      <span class="font-mono text-xs font-semibold tracking-wider">${esc(l.vin)}</span>
+      <span class="flex-1 text-xs text-slate-400 truncate">${esc(l.by||'')}</span>
+      <span class="text-xs text-slate-500 tabular-nums whitespace-nowrap">${fmtTime(l.at)}</span>
+    </div>`;
+  }).join('');
+}
+function renderAssignBanner(){
+  const el=$('assignBanner');
+  if(!S.crew){ el.classList.add('hidden'); return; }
+  const mine = S.assigns.filter(a=>(a.crew||'').toLowerCase()===S.crew.toLowerCase()).sort((a,b)=>new Date(b.at)-new Date(a.at))[0];
+  if(!mine){ el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  $('assignVin').textContent = mine.vin;
+  $('assignAt').textContent = 'Assigned ' + fmtTime(mine.at);
+}
+function renderAssignHistory(){
+  const el=$('assignHistory');
+  if(!S.assigns.length){ el.innerHTML='<p class="text-xs text-slate-500">No assignments sent yet.</p>'; return; }
+  el.innerHTML = S.assigns.slice().reverse().slice(0,20).map(a=>`
+    <div class="flex items-center gap-2.5 rounded-xl bg-slate-800/50 border border-white/10 px-3 py-2">
+      <img class="w-3.5 h-3.5" src="https://unpkg.com/lucide-static@1.44.0/icons/send.svg" alt="">
+      <span class="font-semibold text-sm">${esc(a.crew)}</span>
+      <span class="text-slate-500">→</span>
+      <span class="font-mono text-xs tracking-wider">${esc(a.vin)}</span>
+      <span class="flex-1"></span>
+      <span class="text-[11px] text-slate-500">${fmtTime(a.at)}</span>
+    </div>`).join('');
+}
+function renderSyncPill(connected, pending){
+  const dot=$('syncDot'), txt=$('syncText');
+  if(!S.url){ dot.className='w-1.5 h-1.5 rounded-full bg-slate-600'; txt.textContent='Not connected to spreadsheet (set URL in settings)'; return; }
+  if(pending>0){ dot.className='w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse'; txt.textContent=pending+' action'+(pending>1?'s':'')+' pending sync…'; }
+  else { dot.className='w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]'; txt.textContent='Connected — syncing with spreadsheet'; }
+}
+
+/* ---------- Crew match render ---------- */
+function renderMatches(partial){
+  const el=$('matchList'), msg=$('matchMsg');
+  const p=normVin(partial||'');
+  if(!p){ el.innerHTML=''; msg.textContent=''; return; }
+  const hits=findMatch(p);
+  if(!hits.length){ el.innerHTML=''; msg.textContent='No VIN on the shift roster matches "'+esc(p)+'".'; return; }
+  msg.textContent='';
+  el.innerHTML = hits.map(r=>{
+    const st=S.statuses[r.v];
+    const resTxt=r.res? 'Reservation: <span class="text-slate-200 font-semibold">'+esc(r.res)+'</span>' : '<span class="text-slate-500">No reservation — not counted in countdown</span>';
+    const tag = r.tag ? `<span class="px-2 py-0.5 rounded-full border text-[10px] ${TAG_META[r.tag].badge}">${TAG_META[r.tag].label}</span>` : '';
+    const stBadge = st ? `<span class="px-2 py-0.5 rounded-full border text-[11px] ${META[st.st].badge}">${META[st.st].label}</span>` : '';
+    return `<div class="rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 p-4 shadow-[0_8px_30px_-12px_rgba(52,211,153,0.18)]">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <span class="font-mono font-bold tracking-widest text-base">${esc(r.v)}</span>
+        <span class="flex items-center gap-1.5">${tag}${stBadge}</span>
+      </div>
+      <p class="text-xs text-slate-400 mt-1.5">${resTxt}</p>
+      <div class="grid grid-cols-2 gap-2 mt-3">
+        <button data-vin="${esc(r.v)}" data-st="PU" class="stBtn rounded-2xl bg-emerald-500/15 border border-emerald-400/40 hover:bg-emerald-500/30 hover:shadow-[0_0_20px_rgba(52,211,153,0.35)] text-emerald-200 font-semibold text-sm py-3 transition">Picked Up</button>
+        <button data-vin="${esc(r.v)}" data-st="DO" class="stBtn rounded-2xl bg-teal-500/15 border border-teal-400/40 hover:bg-teal-500/30 hover:shadow-[0_0_20px_rgba(45,212,191,0.35)] text-teal-200 font-semibold text-sm py-3 transition">Dropped Off</button>
+        <button data-vin="${esc(r.v)}" data-st="DN" class="stBtn rounded-2xl bg-amber-500/15 border border-amber-400/40 hover:bg-amber-500/30 hover:shadow-[0_0_20px_rgba(251,191,36,0.35)] text-amber-200 font-semibold text-sm py-3 transition">Downed</button>
+        <button data-vin="${esc(r.v)}" data-st="CO" class="stBtn rounded-2xl bg-lime-500/15 border border-lime-400/40 hover:bg-lime-500/30 hover:shadow-[0_0_20px_rgba(163,230,53,0.35)] text-lime-200 font-semibold text-sm py-3 transition">Complete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+document.addEventListener('click', e=>{
+  const btn=e.target.closest('.stBtn');
+  if(btn) setStatus(btn.dataset.vin, btn.dataset.st);
+});
+
+/* ---------- File handling ---------- */
+function readFile(input, cb){ const f=input.files && input.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>cb(String(r.result)); r.readAsText(f); }
+$('shiftFile').addEventListener('change', e=>{
+  readFile(e.target, txt=>{
+    const {items, skipped}=parseRoster(txt);
+    if(!items.length){ $('shiftMsg').textContent='No valid VINs found in file.'; $('shiftMsg').className='mt-2 text-xs text-amber-400'; return; }
+    if(!confirm(items.length+' VINs found'+(skipped?', '+skipped+' skipped':'')+'. Replace current roster?')) return;
+    S.roster = items.map(it=>({v:it.v, res:it.res, tag:''}));
+    S.statuses = {}; S.logs=[]; S.shiftStarted=nowISO();
+    save(); renderAll();
+    $('shiftMsg').textContent='Roster loaded: '+items.length+' VINs ('+items.filter(i=>i.res).length+' reserved).';
+    $('shiftMsg').className='mt-2 text-xs text-emerald-400';
+    toast('Roster loaded', true);
+  });
+});
+$('addFile').addEventListener('change', e=>{
+  readFile(e.target, txt=>{
+    const {items}=parseRoster(txt);
+    if(!items.length){ $('addPreview').innerHTML='<p class="text-xs text-amber-400 mt-3">No valid VINs found.</p>'; return; }
+    $('addPreview').innerHTML = `
+      <p class="text-xs text-slate-300 mt-4 mb-2 font-semibold">${items.length} VIN(s) parsed — set a tag for each:</p>
+      <div class="divide-y divide-white/5 border border-white/10 rounded-2xl overflow-hidden">` +
+      items.map((it,i)=>`
+        <div class="flex items-center gap-3 px-3 py-2.5 bg-slate-800/40">
+          <span class="font-mono text-xs font-semibold tracking-wider flex-1 truncate">${esc(it.v)}</span>
+          ${it.res?`<span class="text-[10px] text-slate-400">${esc(it.res)}</span>`:''}
+          <select data-idx="${i}" class="tagSel bg-slate-800 border border-white/10 rounded-lg text-xs px-2 py-1.5 outline-none">
+            <option value="modification">Modification</option>
+            <option value="backup">Backup</option>
+            <option value="low-charge">Low Charge</option>
+          </select>
+        </div>`).join('') + `</div>
+      <button id="applyAdd" class="mt-3 w-full rounded-2xl bg-gradient-to-br from-emerald-500 to-lime-400 hover:brightness-110 text-slate-950 font-extrabold py-3 transition shadow-[0_0_20px_rgba(52,211,153,0.3)]">Apply additions</button>`;
+    $('applyAdd').addEventListener('click', ()=>{
+      const sels=[...document.querySelectorAll('.tagSel')];
+      let added=0;
+      items.forEach((it,i)=>{
+        const tag=sels[i]?sels[i].value:'modification';
+        const existing=S.roster.find(r=>r.v===it.v);
+        if(existing){ existing.res=it.res||existing.res; existing.tag=tag; }
+        else { S.roster.push({v:it.v, res:it.res, tag}); added++; }
+      });
+      save(); renderAll();
+      $('addPreview').innerHTML='';
+      toast(added+' added, others updated', true);
+    });
+  });
+});
+
+/* ---------- Assignments ---------- */
+$('sendAssign').addEventListener('click', async ()=>{
+  const crew=$('assignCrew').value.trim(), vinInput=$('assignVin').value.trim();
+  $('assignMsg').textContent='';
+  if(!crew){ $('assignMsg').textContent='Enter crew member name.'; return; }
+  const v=normVin(vinInput);
+  if(!v){ $('assignMsg').textContent='Enter a VIN.'; return; }
+  let target=v;
+  if(v.length<17){
+    const hits=findMatch(v);
+    if(!hits.length){ $('assignMsg').textContent='No roster VIN matches "'+v+'".'; return; }
+    if(hits.length>1){ $('assignMsg').textContent='Multiple matches: '+hits.map(h=>h.v).join(', ')+' — enter a longer suffix.'; return; }
+    target=hits[0].v;
+  }
+  addCrewMember(crew);
+  const rec={type:'assign', crew, vin:target, at:nowISO()};
+  S.assigns.push(rec); save();
+  $('assignVin').value=''; $('assignMsg').textContent='Assigned '+target+' → '+crew+'.';
+  toast('Assigned '+target, true);
+  S.queue.push({...rec}); renderAll(); pushQueue();
+});
+
+/* ---------- Reset ---------- */
+$('resetShift').addEventListener('click', ()=>{
+  $('resetMsg').textContent='Are you sure? Click again to confirm.';
+  $('resetMsg').className='mt-2 text-xs text-amber-400';
+  $('resetMsg').dataset.armed='1';
+  setTimeout(()=>{ if($('resetMsg').dataset.armed){ $('resetMsg').textContent=''; $('resetMsg').dataset.armed=''; } }, 3000);
+});
+$('resetMsg').addEventListener('click', ()=>{
+  if($('resetMsg').dataset.armed!=='1') return;
+  S.roster=[]; S.statuses={}; S.logs=[]; S.queue=[]; S.shiftStarted=null;
+  save(); renderAll();
+  $('resetMsg').textContent='Roster cleared.';
+  $('resetMsg').className='mt-2 text-xs text-emerald-400';
+  $('resetMsg').dataset.armed='';
+});
+
+/* ---------- Navigation ---------- */
+function show(view){
+  ['viewBoot','viewCrew','viewCmd'].forEach(id=>$(id).classList.toggle('hidden', id!=='view'+view));
+}
+$('btnCrew').addEventListener('click', ()=>{ show('Crew'); renderAll(); });
+$('btnCmd').addEventListener('click', ()=>{ show('Cmd'); renderAll(); });
+$('btnSettingsBoot').addEventListener('click', ()=>openSettings());
+$('crewSettingsBtn').addEventListener('click', ()=>openSettings());
+$('cmdSettingsBtn').addEventListener('click', ()=>openSettings());
+$('btnQrBoot').addEventListener('click', ()=>{
+  if(!S.crew){ toast('Set your name in settings first'); return; }
+  renderQr(qrData(S.crew), S.crew + ' — your badge', 'Scan to sign in as '+ S.crew);
+  $('modalQr').classList.remove('hidden');
+});
+$('closeSettings').addEventListener('click', ()=>$('modalSettings').classList.add('hidden'));
+function openSettings(){ $('setName').value=S.crew; $('setUrl').value=S.url; $('connMsg').textContent=''; $('modalSettings').classList.remove('hidden'); setAppUrlText(); }
+$('saveSettings').addEventListener('click', ()=>{
+  S.crew=$('setName').value.trim(); S.url=$('setUrl').value.trim();
+  if(S.crew) addCrewMember(S.crew);
+  save(); renderAll(); $('modalSettings').classList.add('hidden'); toast('Saved', true);
+});
+$('testConn').addEventListener('click', async ()=>{
+  const url=$('setUrl').value.trim(); $('connMsg').textContent='Testing…';
+  if(!url){ $('connMsg').textContent='Enter the URL first.'; return; }
+  try {
+    const r=await fetch(url+'?action=logs'); const j=await r.json();
+    $('connMsg').textContent = Array.isArray(j) ? 'Connected — spreadsheet reachable.' : 'Connected.';
+    $('connMsg').className='text-xs text-emerald-400';
+  } catch(e){ $('connMsg').textContent='Failed — check URL and deployment access settings.'; $('connMsg').className='text-xs text-amber-400'; }
+});
+
+/* ---------- Crew input ---------- */
+$('crewInput').addEventListener('input', e=>{ e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6); });
+$('crewInput').addEventListener('keydown', e=>{ if(e.key==='Enter') renderMatches(e.target.value); });
+$('crewGo').addEventListener('click', ()=>renderMatches($('crewInput').value));
+$('crewInput').addEventListener('input', ()=>{ if($('crewInput').value.length>=4) renderMatches($('crewInput').value); });
+$('crewSyncBtn').addEventListener('click', ()=>{ toast('Syncing…'); syncAll().then(()=>toast('Sync complete', true)); });
+$('cmdSyncBtn').addEventListener('click', ()=>{ toast('Syncing…'); syncAll().then(()=>toast('Sync complete', true)); });
+
+/* ============================================================
+   NIGHT-OPS BACKGROUND — dark energy network + green lightning
+   + radar sweep pulses
+   ============================================================ */
+(function(){
+  const cv=$('fx'); const ctx=cv.getContext('2d');
+  let W=0,H=0,nodes=[];
+  function resize(){
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    W=cv.clientWidth=dpr*innerWidth; H=cv.clientHeight=dpr*innerHeight;
+    cv.width=W; cv.height=H;
+    const count = Math.min(70, Math.max(28, Math.floor(innerWidth/18)));
+    nodes=[];
+    for(let i=0;i<count;i++){
+      nodes.push({
+        x:Math.random()*W, y:Math.random()*H,
+        vx:(Math.random()-0.5)*0.35*dpr, vy:(Math.random()-0.5)*0.35*dpr,
+        r:Math.random()*1.6+0.6,
+        hue: Math.random()<0.6 ? 0 : (Math.random()<0.5?1:2)
+      });
+    }
+  }
+  const COLORS=['rgba(52,211,153,', 'rgba(163,230,53,', 'rgba(251,191,36,'];
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    for(const n of nodes){
+      n.x+=n.vx; n.y+=n.vy;
+      if(n.x<0||n.x>W) n.vx*=-1;
+      if(n.y<0||n.y>H) n.vy*=-1;
+    }
+    for(let i=0;i<nodes.length;i++){
+      for(let j=i+1;j<nodes.length;j++){
+        const a=nodes[i],b=nodes[j];
+        const dx=a.x-b.x, dy=a.y-b.y, d=Math.hypot(dx,dy);
+        if(d<130*Math.min(innerWidth/900,1)+60){
+          const alpha=(1-d/190)*0.14;
+          const col=COLORS[(a.hue+b.hue)%3];
+          ctx.strokeStyle=col+alpha+')';
+          ctx.lineWidth=0.8;
+          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+        }
+      }
+    }
+    for(const n of nodes){
+      ctx.fillStyle=COLORS[n.hue]+'0.5)';
+      ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,7); ctx.fill();
+    }
+    requestAnimationFrame(frame);
+  }
+  // green lightning bolts
+  setInterval(()=>{
+    const bolts=2+Math.floor(Math.random()*3);
+    for(let k=0;k<bolts;k++){
+      setTimeout(()=>{
+        let x=Math.random()*W; let y=0;
+        ctx.save();
+        ctx.strokeStyle='rgba(190,255,210,'; ctx.lineWidth=1.5;
+        ctx.shadowColor='rgba(52,211,153,0.9)'; ctx.shadowBlur=18;
+        ctx.beginPath(); ctx.moveTo(x,y);
+        for(let s=0;s<26;s++){
+          x+= (Math.random()-0.5)*60; y+= (H/26)*(0.6+Math.random()*0.9);
+          ctx.lineTo(x,y);
+        }
+        ctx.stroke(); ctx.restore();
+      }, k*120);
+    }
+  }, 6500);
+  // radar sweep pulses
+  setInterval(()=>{
+    const cx=Math.random()*W, cy=Math.random()*H;
+    let r=0;
+    const maxR=Math.min(W,H)*0.6;
+    const iv=setInterval(()=>{
+      r+=8;
+      if(r>maxR){ clearInterval(iv); return; }
+      ctx.save();
+      ctx.strokeStyle='rgba(52,211,153,'+(0.25*(1-r/maxR))+')';
+      ctx.lineWidth=1.2;
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.stroke();
+      ctx.restore();
+    }, 30);
+  }, 4200);
+  addEventListener('resize', resize);
+  resize(); frame();
+})();
+
+/* ---------- Boot / query param ---------- */
+(function(){
+  try {
+    const params=new URLSearchParams(window.location.search);
+    const qc=(params.get('crew')||'').trim();
+    if(qc){
+      S.crew=qc; if(!S.crewMembers.some(n=>n.toLowerCase()===qc.toLowerCase())) S.crewMembers.push(qc);
+      save();
+    }
+  } catch(e){}
+  $('bootWelcome').innerHTML = S.crew ? 'Signed in as <b class="text-emerald-200">'+esc(S.crew)+'</b> — night ops commence 🌙' : 'Choose a mode to start.';
+  $('crewNameChip').textContent = S.crew || '';
+})();
+
+/* ---------- Init ---------- */
+setAppUrlText();
+renderAll();
+if(S.url) setTimeout(()=>syncAll(), 800);
+setInterval(()=>{ if(S.url) syncAll(); }, 45000);
+</script>
+</body>
+</html>
